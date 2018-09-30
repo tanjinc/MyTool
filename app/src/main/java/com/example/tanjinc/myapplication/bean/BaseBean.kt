@@ -4,7 +4,7 @@ package com.example.tanjinc.myapplication.bean;
 import android.support.annotation.Keep;
 
 @Keep
-public abstract class BaseBean {
+abstract class BaseBean {
 
-    public abstract int getType();
+    abstract fun getType(): Int
 }
