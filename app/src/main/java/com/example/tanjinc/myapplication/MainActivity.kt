@@ -1,6 +1,10 @@
 package com.example.tanjinc.myapplication
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Contacts
+import android.support.annotation.MainThread
 import android.support.design.widget.TabLayout
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
@@ -8,12 +12,18 @@ import android.support.v4.app.FragmentStatePagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.widget.Toast
 import com.example.tanjinc.myapplication.fragment.gridpage.GridFragment
 import com.example.tanjinc.myapplication.fragment.gridpage.GridPresenter
 import com.example.tanjinc.myapplication.fragment.testpage.TestFragment
 import com.example.tanjinc.myapplication.fragment.testpage.TestPresenter
 import com.tencent.mmkv.MMKV
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import java.util.*
 
 data class Customer(val name: String, val email: String)
@@ -21,6 +31,8 @@ data class Customer(val name: String, val email: String)
 class MainActivity : AppCompatActivity() {
 
     private val TAG:String = "MainActivity"
+    internal val Background = newFixedThreadPoolContext(2, "bg")
+
 
     private lateinit var mTabLayout: TabLayout
     private lateinit var mViewPager: ViewPager
@@ -36,6 +48,20 @@ class MainActivity : AppCompatActivity() {
 
         mTabLayout = findViewById(R.id.tabLayout)
         mViewPager = findViewById(R.id.main_viewpager)
+
+        downloadBtn.setOnClickListener {
+            //launch()表示创建和启动一个Coroutine
+            launch (CommonPool) {
+                Log.d(TAG, "download 1 " + Thread.currentThread().name)
+                DownloadUtil.instance.download("app-debug.apk", "/sdcard/")
+                launch (UI){
+                    Log.d(TAG, "download 3 " + Thread.currentThread().name)
+                    toast("download success")
+                }
+            }
+            Log.d(TAG, "download 2 " + Thread.currentThread().name)
+
+        }
 
 
         val gridFragment = GridFragment()
@@ -65,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         val c = a!! * b!!
 
 
-        CommonUtil.instance
+        CommonUtil.instance.test()
         customer = Customer("tanjinc", "tanjinc@126.com")
         Log.d("tag", customer.email)
 
@@ -109,6 +135,9 @@ class MainActivity : AppCompatActivity() {
 
     //相等行
 
+    private fun toast(msg:String) {
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+    }
 
     suspend fun dosomething() {
 

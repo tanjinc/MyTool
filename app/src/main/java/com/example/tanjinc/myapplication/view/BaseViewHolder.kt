@@ -5,5 +5,5 @@ import android.view.View
 
 abstract class BaseViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-    abstract val type: Int
+    abstract fun getType(): Int
 }

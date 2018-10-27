@@ -17,7 +17,7 @@ class VideoViewHolder(itemView: View) : BaseViewHolder(itemView) {
         itemNameTv = itemView.item_name
     }
 
-    fun getType(): Int {
+    override fun getType(): Int {
         return BaseConstant.TYPE_VIDEO
     }
 }

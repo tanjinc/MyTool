@@ -60,4 +60,10 @@ fun main(args: Array<String>) {
         println("$k -> $v")
     }
 
+    args.flatMap {
+        it.split("_")
+    }.map {
+        print("$it")
+    }
+
 }
