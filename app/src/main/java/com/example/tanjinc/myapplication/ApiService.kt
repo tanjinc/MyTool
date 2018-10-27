@@ -9,6 +9,7 @@ import retrofit2.http.Url
 
 interface ApiService {
 
+    @Streaming
     @GET
     fun downloadFileWithDynamicUrlAsync(@Url fileUrl: String): Call<ResponseBody>
 }
