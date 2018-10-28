@@ -11,5 +11,5 @@ interface ApiService {
 
     @Streaming
     @GET
-    fun downloadFileWithDynamicUrlAsync(@Url fileUrl: String): Call<ResponseBody>
+    fun downloadFile(@Url fileUrl: String): Call<ResponseBody>
 }

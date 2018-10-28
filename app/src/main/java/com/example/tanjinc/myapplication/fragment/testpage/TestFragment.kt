@@ -11,9 +11,13 @@ import android.view.ViewGroup
 
 import com.example.tanjinc.myapplication.R
 import com.example.tanjinc.myapplication.bean.TestBean
+import com.example.tanjinc.myapplication.fragment.BaseFragment
 
 
-class TestFragment : Fragment(), TestContract.View {
+class TestFragment : BaseFragment(), TestContract.View {
+    override fun getName(): String {
+        return "Test"
+    }
 
     private var mRecyclerView: RecyclerView? = null
     private var mSwipeRefreshLayout: SwipeRefreshLayout? = null

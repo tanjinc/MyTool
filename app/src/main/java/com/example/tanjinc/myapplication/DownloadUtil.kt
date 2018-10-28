@@ -13,14 +13,10 @@ import android.os.Environment.getExternalStorageDirectory
 import kotlinx.coroutines.experimental.async
 
 
-public class DownloadUtil private constructor() {
+public object DownloadUtil {
     private final val TAG = "DownloadUtil"
 
     private val BASE_URL:String = "http://192.168.232.158:8000/"
-
-    companion object {
-        val instance: DownloadUtil = DownloadUtil()
-    }
 
     interface DownloadCallback {
         fun onFail(message : String?)
@@ -31,25 +27,25 @@ public class DownloadUtil private constructor() {
     /**
      * 同步操作
      */
-    fun downloadFile(fileName:String, path:String, callback: DownloadCallback) {
+    fun downloadFile(serverIp:String, fileName:String, target:String, callback: DownloadCallback? = null) {
         val retrofit: Retrofit = Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(serverIp)
                 .build()
         val apiService = retrofit.create(ApiService::class.java)
-        var response = apiService.downloadFileWithDynamicUrlAsync(fileName).execute()//同步
+        var response = apiService.downloadFile(fileName).execute()//同步
         if (response.body() != null){
-            val ret = writeResponseBodyToDisk(response.body(), getSDPath()+"/"+fileName, callback)
+            val ret = writeResponseBodyToDisk(response.body(), target, callback)
             if (ret) {
-                callback.onSuccess()
+                callback?.onSuccess()
             } else {
-                callback.onFail(response.message())
+                callback?.onFail(response.message())
             }
         } else {
             Log.e(TAG, response.message())
-            callback.onFail(response.message())
+            callback?.onFail(response.message())
         }
     }
-    private fun writeResponseBodyToDisk(body:ResponseBody ?, targetUrl: String, callback: DownloadCallback) : Boolean{
+    private fun writeResponseBodyToDisk(body:ResponseBody ?, targetUrl: String, callback: DownloadCallback?) : Boolean{
         if (body == null) {
             return false
         }
@@ -59,7 +55,7 @@ public class DownloadUtil private constructor() {
 
         try {
             val futureStudioIconFile = File(targetUrl)
-            val fileReader = ByteArray(1024 * 1024)
+            val fileReader = ByteArray(8 * 1024 * 1024)
             val fileSize: Long = body.contentLength()
             var fileSizeDownloaded = 0
 
@@ -74,7 +70,7 @@ public class DownloadUtil private constructor() {
                 outputStream.write(fileReader, 0, read)
                 fileSizeDownloaded += read
                 Log.d(TAG, "file download: " + fileSizeDownloaded + " of " + fileSize);
-                callback.progress(fileSizeDownloaded * 1.0f /fileSize)
+                callback?.progress(fileSizeDownloaded * 1.0f /fileSize)
             }
             outputStream.flush()
             return true
@@ -85,15 +81,5 @@ public class DownloadUtil private constructor() {
             inputStream?.close()
             outputStream?.close()
         }
-    }
-
-    private fun getSDPath(): String {
-        var sdDir: File? = null
-        val sdCardExist = Environment.getExternalStorageState()
-                .equals(android.os.Environment.MEDIA_MOUNTED)//判断sd卡是否存在
-        if (sdCardExist) {
-            sdDir = Environment.getExternalStorageDirectory()//获取跟目录
-        }
-        return sdDir!!.toString()
     }
 }

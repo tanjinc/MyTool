@@ -12,9 +12,13 @@ import android.view.ViewGroup
 
 import com.example.tanjinc.myapplication.R
 import com.example.tanjinc.myapplication.bean.BaseBean
+import com.example.tanjinc.myapplication.fragment.BaseFragment
 
 
-class GridFragment : Fragment(), GridContract.View {
+class GridFragment : BaseFragment(), GridContract.View {
+    override fun getName(): String {
+        return "网格布局"
+    }
 
     private var mRecyclerView: RecyclerView? = null
     private var mSwipeRefreshLayout: SwipeRefreshLayout? = null
