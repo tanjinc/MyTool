@@ -1,10 +1,13 @@
 package com.example.tanjinc.myapplication.fragment.apkpage
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -20,6 +23,10 @@ import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import java.io.File
+import java.lang.Exception
+
+data class AppBean(val name:String, val haveDownload:Boolean = false)
 
 class AppFragment : BaseFragment(){
     private val TAG = "AppFragment"
@@ -28,7 +35,7 @@ class AppFragment : BaseFragment(){
     private val BASE_URL:String = "http://192.168.232.158:8000/"
     private var mFileName : String ?= null
     private lateinit var mServerIp : String
-
+    private var mAdapter: MyAdapter ?= null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_app_layout, null)
@@ -39,11 +46,14 @@ class AppFragment : BaseFragment(){
         progressBar.max = PROGRESS_BAR_MAX
         mServerIp = ip.text.toString()
         swipeRefreshLayout.setOnRefreshListener {
-            fileContainer.removeAllViews()
             fetchData()
             swipeRefreshLayout.isRefreshing = false
         }
         fetchData()
+
+        mAdapter = MyAdapter()
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+        recyclerView.adapter = mAdapter
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -62,29 +72,29 @@ class AppFragment : BaseFragment(){
 
     private fun fetchData() {
         launch {
-            var document: Document = Jsoup.connect(mServerIp).get()
-            val aTags = document.getElementsByTag("li")
-            var files = mutableListOf<String>()
-            for (item in aTags) {
-                files.add(item.text())
-            }
+            var document:Document ?= null
+            try {
+                document = Jsoup.connect(mServerIp).get()
+            } catch (e: Exception) {
 
-            launch(UI) {
-                for (file in files) {
-                    var textView = TextView(getContext())
-                    textView.text = file
-                    textView.setPadding(0, 10, 0, 10)
-                    textView.setOnClickListener {
-                        textView.setTextColor(Color.BLUE)
-                        downloadApp(file)
-                    }
-                    fileContainer.addView(textView)
+            }
+            if(document != null) {
+                val aTags = document.getElementsByTag("li")
+                var files = mutableListOf<AppBean>()
+                for (item in aTags) {
+                    var appBean = AppBean(item.text(), isExit(item.text()))
+                    files.add(appBean)
+                }
+
+                launch(UI) {
+                    mAdapter?.setData(files)
                 }
             }
+
         }
     }
 
-    private fun downloadApp( fileName : String) {
+    public fun downloadApp( fileName : String) {
         if (Build.VERSION.SDK_INT >= 23) {
             val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             //验证是否许可权限
@@ -121,5 +131,54 @@ class AppFragment : BaseFragment(){
 
             })
         }
+    }
+
+    fun isExit(fileName: String):Boolean {
+        var file = File(CommonUtil.instance.getSDPath()+"/"+fileName)
+        return file.exists()
+    }
+
+    inner class MyAdapter : RecyclerView.Adapter<MyViewHolder>() {
+        private var appArray = mutableListOf<AppBean>()
+
+        public fun setData(list: MutableList<AppBean>){
+            appArray = list
+            notifyDataSetChanged()
+        }
+
+        override fun onCreateViewHolder(viewGroup: ViewGroup, p1: Int): MyViewHolder {
+            var view = LayoutInflater.from(viewGroup.context).inflate(R.layout.app_item_layout, null)
+            return MyViewHolder(view)
+        }
+
+        override fun getItemCount(): Int {
+            return appArray.size
+        }
+
+        override fun onBindViewHolder(viewholder: MyViewHolder, position: Int) {
+            var appBean = appArray[position]
+            viewholder.apply {
+                viewholder.appNameTv.text = appBean.name
+                viewholder.appNameTv.setTextColor(if (appBean.haveDownload) Color.BLUE else Color.BLACK)
+                viewholder.appNameTv.setOnClickListener {
+                    if (!appBean.haveDownload) {
+                        downloadApp(appBean.name)
+                        viewholder.appNameTv.setTextColor(Color.BLUE)
+                    } else {
+                        toast("已经下载成功,开始安装")
+                        CommonUtil.instance.installApp(context!!, CommonUtil.instance.getSDPath()+"/"+appBean.name)
+                    }
+                }
+            }
+
+        }
+
+    }
+    class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val appNameTv : TextView = itemView.findViewById(R.id.appNameTv)
+    }
+
+    fun Context.Toast(msg:String) {
+        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
     }
 }
