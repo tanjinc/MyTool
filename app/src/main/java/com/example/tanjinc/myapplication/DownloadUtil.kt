@@ -10,7 +10,6 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import java.io.*
 import android.os.Environment.getExternalStorageDirectory
-import kotlinx.coroutines.experimental.async
 
 
 public object DownloadUtil {

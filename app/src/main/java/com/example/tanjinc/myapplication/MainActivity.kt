@@ -15,7 +15,6 @@ import com.example.tanjinc.myapplication.fragment.gridpage.GridPresenter
 import com.example.tanjinc.myapplication.fragment.testpage.TestFragment
 import com.example.tanjinc.myapplication.fragment.testpage.TestPresenter
 import com.tencent.mmkv.MMKV
-import kotlinx.coroutines.experimental.launch
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
